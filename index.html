@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+      #row-alerta { font-size: 18px; }
+      #lista-typing {list-style-type:none;}
+    </style>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+  </head>
+  <body>
+    <div class="container">
+      <div class="row justify-content-center align-items-center">
+        <div class="col-4 mt-5">
+          <div class="input-group">
+            <input type="text" id="nickname" class="form-control" placeholder="Escriba su nombre de usuario"/>
+          </div>
+          <button type="button" id="btn-ingresar" class="btn btn-success mt-1 btn-block">Ingresar</button>
+        </div>
+      </div>
+      <ul id="lista-typing">
+        <li id="typing" class="d-none"></li>
+      </ul>
+    </div>
+    
+    <div class="alert alert-success d-none container" id="alerta-usuario" role="alert">
+      <div class="row justify-content-center" id="row-alerta">
+      </div>
+    </div>
+
+    <ul id="messages" class="d-none"></ul>
+    <form action="" class="d-none">
+      <input id="m" autocomplete="off" /><button>Send</button>
+    </form>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+      $(function(){
+        var socket = io();
+        console.log(socket);
+        $('#btn-ingresar').click(function(){
+          var nickname = $('#nickname').val();
+          $(this).addClass('d-none');
+          $('#nickname').addClass('d-none');
+          $('#messages').removeClass('d-none');
+          $('form').removeClass('d-none');
+
+          socket.emit('nombre usuario', nickname);
+        });
+
+        $('form').submit(function(){
+          //Emite el evento
+          socket.emit('chat message', $('#m').val());//Manda el evento y el valor
+          $('#m').val('');//Limpia el campo
+          return false;
+        });
+
+        $('#m').keypress(function(){
+          socket.emit('user typing');
+        });
+
+        socket.on('user typing', function(usuario){
+          $('#typing').text(usuario+" esta escribiendo...");
+          $('#typing').removeClass('d-none');
+          setTimeout(function(){
+            $('#typing').addClass('d-none');
+          },800);
+        });
+
+        //Escucha el evento
+        socket.on('chat message', function(msg, user){
+          $('#messages').append($('<li>').text(user+": "+msg));
+        });
+
+        socket.on('desconectado', function(user){
+          var li = $('<li>').text(user +" se ha desconectado.");
+          li.css('color','#fff');
+          li.css('background-color','red')
+          $('#messages').append(li);
+        });
+
+        socket.on('mostrar alerta', function(usr){
+          $('#row-alerta').append("Te has conectado con el nombre de usuario: " + usr);
+          $('#alerta-usuario').removeClass('d-none');
+          setTimeout(function(){
+            $('#alerta-usuario').addClass('d-none');
+          },3000);
+          
+        })
+      });
+
+    </script>
+  </body>
+</html>
